@@ -1,0 +1,41 @@
+{
+  "_doc": {
+    "nombres_populares": "Por municipio (nombre oficial INE): nombre de la zona en OSM -> nombre con que se muestra en barrio_real. Solo cambia la presentación de /ubicacion.",
+    "compuestas": "Zonas que no existen como un solo polígono y se arman uniendo otras por id (ver /zona/{id} o la jerarquía de /ubicacion). Se pueden buscar por 'nombre' y por cada 'alias'. Útil para barrios populares de Santa Cruz formados por varias UV."
+  },
+  "nombres_populares": {
+    "Santa Cruz de la Sierra": {
+      "Avaroa": "Equipetrol (Zona Avaroa)",
+      "Faremafu": "Equipetrol (Zona Faremafu)",
+      "Sirari": "Equipetrol Norte / Sirari",
+      "Villa San Luis": "Villa San Luis / Equipetrol",
+      "Hamacas": "Barrio Hamacas",
+      "Los Pozos": "Zona Los Pozos (Centro)",
+      "La Ramada": "Zona La Ramada",
+      "Plan 3000": "Ciudadela Andrés Ibáñez (Plan 3000)",
+      "Villa 1ro de Mayo": "Villa Primero de Mayo"
+    },
+    "Nuestra Señora de La Paz": {
+      "Kantutani": "Sopocachi (Sector Kantutani)",
+      "Calacoto": "Calacoto (Zona Sur)",
+      "Obrajes": "Obrajes (Zona Sur)",
+      "Achumani": "Achumani (Zona Sur)"
+    },
+    "Cochabamba": {
+      "Portales": "Cala Cala (Sector Portales)",
+      "Sarco": "Sarco / Queru Queru"
+    }
+  },
+  "compuestas": [
+    {
+      "nombre": "Equipetrol",
+      "alias": ["Equipetrol Norte", "Zona Equipetrol"],
+      "municipio": "Santa Cruz de la Sierra",
+      "provincia": "Andrés Ibáñez",
+      "departamento": "Santa Cruz",
+      "desde_nombres": ["Avaroa", "Faremafu", "Sirari", "Villa San Luis"],
+      "uvs": ["59"],
+      "fuente": "alias.json: UV que contienen Avaroa, Faremafu, Sirari y Villa San Luis, más la UV 59"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+# Solo para regenerar datos/ con scripts/construir_datos.py (no hacen falta para la API)
+-r requirements.txt
+numpy>=2.0
+pyarrow>=15
+pyproj>=3.6

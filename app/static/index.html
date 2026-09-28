@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoUbicación Bolivia</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --fondo: #ffffff; --texto: #0f172a; --suave: #64748b; --tenue: #94a3b8;
+            --borde: #e2e8f0; --panel: #f8fafc; --acento: #2563eb; --acento-hover: #1d4ed8;
+            --acento-suave: #eff6ff; --ok: #15803d; --aviso: #b45309; --error: #b91c1c;
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        body { margin: 0; display: flex; height: 100vh; background: var(--fondo); color: var(--texto); }
+        #panel { width: 380px; display: flex; flex-direction: column; border-right: 1px solid var(--borde); z-index: 1000; background: var(--fondo); }
+        #map { flex: 1; height: 100%; }
+        @media (max-width: 760px) { body { flex-direction: column; } #panel { width: 100%; height: 55vh; border-right: 0; border-bottom: 1px solid var(--borde); } #map { height: 45vh; } }
+
+        header { padding: 18px 20px 12px; }
+        h1 { margin: 0; font-size: 1.15rem; }
+        header p { margin: 4px 0 0; color: var(--suave); font-size: .85rem; }
+
+        .pestanas { display: flex; gap: 4px; margin: 0 20px; padding: 4px; background: var(--panel); border-radius: 10px; }
+        .pestanas button { flex: 1; border: 0; background: transparent; padding: 8px; border-radius: 7px; font-weight: 600; font-size: .85rem; color: var(--suave); cursor: pointer; }
+        .pestanas button[aria-selected="true"] { background: var(--fondo); color: var(--texto); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+        .contenido { flex: 1; overflow-y: auto; padding: 16px 20px 20px; }
+        .vista[hidden] { display: none; }
+        .ayuda { color: var(--suave); font-size: .82rem; margin: 0 0 10px; }
+        .fila-form { display: flex; gap: 8px; }
+        input { width: 100%; min-width: 0; padding: 9px 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: .92rem; }
+        input:focus { outline: 2px solid var(--acento-suave); border-color: var(--acento); }
+        .btn { border: 0; background: var(--acento); color: #fff; padding: 9px 14px; border-radius: 8px; font-weight: 600; font-size: .9rem; cursor: pointer; white-space: nowrap; }
+        .btn:hover { background: var(--acento-hover); }
+        .btn-sec { width: 100%; margin-top: 12px; background: var(--fondo); color: var(--acento); border: 1px solid #bfdbfe; }
+        .btn-sec:hover { background: var(--acento-suave); }
+
+        .resultado { margin-top: 16px; }
+        .titulo-res { font-size: 1.35rem; font-weight: 800; line-height: 1.2; }
+        .subtitulo-res { color: var(--suave); font-size: .82rem; margin-top: 3px; }
+        .estado { font-size: .8rem; font-weight: 700; margin-bottom: 4px; }
+        .estado.ok { color: var(--ok); } .estado.aviso { color: var(--aviso); } .estado.error { color: var(--error); }
+
+        dl.datos { margin: 14px 0 0; border-top: 1px solid var(--borde); }
+        dl.datos div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--borde); font-size: .86rem; }
+        dl.datos dt { color: var(--suave); flex-shrink: 0; }
+        dl.datos dd { margin: 0; font-weight: 600; text-align: right; word-break: break-word; }
+
+        details { margin-top: 14px; border: 1px solid var(--borde); border-radius: 8px; background: var(--panel); }
+        summary { cursor: pointer; padding: 9px 12px; font-size: .84rem; font-weight: 600; color: var(--suave); }
+        .detalle { padding: 0 12px 12px; font-size: .82rem; }
+        .etiqueta { font-size: .7rem; text-transform: uppercase; letter-spacing: .03em; font-weight: 700; color: var(--tenue); margin: 10px 0 4px; }
+        .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+        .chip { background: #e2e8f0; color: #334155; font-size: .74rem; padding: 3px 8px; border-radius: 6px; font-weight: 600; }
+        .chip.link { background: #dbeafe; color: #1e40af; cursor: pointer; border: 0; }
+        code { font-family: ui-monospace, Consolas, monospace; font-size: .78rem; background: #e2e8f0; padding: 1px 5px; border-radius: 4px; word-break: break-all; }
+        .cargando { color: var(--aviso); font-size: .85rem; margin-top: 12px; }
+
+        footer { padding: 10px 20px; border-top: 1px solid var(--borde); font-size: .78rem; color: var(--suave); }
+        footer a { color: var(--acento); text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+<aside id="panel">
+    <header>
+        <h1>GeoUbicación Bolivia</h1>
+        <p>Barrios, zonas y polígonos de todo el país.</p>
+    </header>
+
+    <nav class="pestanas" role="tablist">
+        <button role="tab" id="tab-ubicar" aria-selected="true" aria-controls="vista-ubicar">📍 Ubicar coordenada</button>
+        <button role="tab" id="tab-buscar" aria-selected="false" aria-controls="vista-buscar">🔎 Buscar zona</button>
+    </nav>
+
+    <div class="contenido">
+        <!-- Ubicar coordenada -->
+        <section class="vista" id="vista-ubicar" role="tabpanel">
+            <p class="ayuda">Haz clic en el mapa o escribe una coordenada.</p>
+            <form id="form-coord" class="fila-form">
+                <input type="number" step="any" id="lat" value="-17.765853" aria-label="Latitud" placeholder="Latitud">
+                <input type="number" step="any" id="lon" value="-63.194236" aria-label="Longitud" placeholder="Longitud">
+                <button class="btn" type="submit">Ubicar</button>
+            </form>
+            <div id="estado-ubicar"></div>
+
+            <div id="res-ubicar" class="resultado" hidden>
+                <div class="titulo-res" id="u-titulo"></div>
+                <div class="subtitulo-res" id="u-subtitulo"></div>
+                <dl class="datos" id="u-datos"></dl>
+                <button type="button" class="btn btn-sec" id="u-poligono">Ver polígono</button>
+                <details>
+                    <summary>Más detalles</summary>
+                    <div class="detalle">
+                        <div class="etiqueta">Subdivisiones catastrales detectadas</div>
+                        <div class="chips" id="u-subdiv"></div>
+                        <div class="etiqueta">Zonas con polígono (clic para verlas)</div>
+                        <div class="chips" id="u-zonas"></div>
+                        <div class="etiqueta">Dirección completa</div>
+                        <div id="u-direccion"></div>
+                        <div class="etiqueta">Fuente</div>
+                        <div id="u-fuente"></div>
+                    </div>
+                </details>
+            </div>
+        </section>
+
+        <!-- Buscar zona -->
+        <section class="vista" id="vista-buscar" role="tabpanel" hidden>
+            <p class="ayuda">Escribe un barrio o zona. Puedes indicar la ciudad: <em>sopocachi en la paz</em>.</p>
+            <form id="form-buscar" class="fila-form">
+                <input id="q" placeholder="Ej.: Equipetrol, Villa Adela, UV 45" autocomplete="off" aria-label="Nombre de la zona">
+                <button class="btn" type="submit">Buscar</button>
+            </form>
+            <div id="estado-buscar"></div>
+
+            <div id="res-buscar" class="resultado" hidden>
+                <div class="estado" id="b-estado"></div>
+                <div class="titulo-res" id="b-titulo"></div>
+                <div class="subtitulo-res" id="b-subtitulo"></div>
+                <details id="b-detalles">
+                    <summary>Más detalles</summary>
+                    <div class="detalle">
+                        <div id="b-id-bloque">
+                            <div class="etiqueta">id_poligono (para la API)</div>
+                            <code id="b-id"></code>
+                        </div>
+                        <div class="etiqueta">Fuente</div>
+                        <div id="b-fuente"></div>
+                        <div id="b-otras-bloque">
+                            <div class="etiqueta" id="b-otras-titulo">Otras coincidencias</div>
+                            <div class="chips" id="b-otras"></div>
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </section>
+    </div>
+
+    <footer>¿Integración con otro sistema? <a href="/docs" target="_blank">Documentación de la API →</a></footer>
+</aside>
+<div id="map"></div>
+
+<script>
+    const $ = id => document.getElementById(id);
+    const map = L.map('map').setView([-17.765853, -63.194236], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(map);
+    let marcador = null, capa = null;
+
+    const PRECISION_BARRIO = {
+        poligono: 'Dentro del polígono del barrio',
+        nominatim: 'Según la dirección de OpenStreetMap',
+        punto_cercano: 'Aproximado: barrio más cercano registrado como punto',
+        sin_datos: 'No hay barrio registrado aquí',
+    };
+    const ESTADOS = {
+        encontrado: ['ok', '✓ Encontrado'],
+        aproximado: ['aviso', '≈ Aproximado: se muestra la UV que contiene al barrio'],
+        sin_poligono: ['aviso', '⚠ Existe solo como punto, sin polígono'],
+        no_encontrado: ['error', '✗ No encontrado'],
+    };
+
+    // Los nombres vienen de fuentes abiertas: nunca se insertan como HTML.
+    const texto = (el, v) => { el.textContent = v ?? ''; };
+    const chip = (t, alClic) => {
+        const el = document.createElement(alClic ? 'button' : 'span');
+        el.className = 'chip' + (alClic ? ' link' : ''); el.textContent = t;
+        if (alClic) { el.type = 'button'; el.onclick = alClic; }
+        return el;
+    };
+
+    // --- pestañas ------------------------------------------------------------
+    function mostrar(pestana) {
+        for (const p of ['ubicar', 'buscar']) {
+            $('tab-' + p).setAttribute('aria-selected', p === pestana);
+            $('vista-' + p).hidden = p !== pestana;
+        }
+    }
+    $('tab-ubicar').onclick = () => mostrar('ubicar');
+    $('tab-buscar').onclick = () => { mostrar('buscar'); $('q').focus(); };
+
+    // --- mapa ----------------------------------------------------------------
+    function limpiarPoligono() { if (capa) { map.removeLayer(capa); capa = null; } }
+    function dibujar(geojson, etiqueta) {
+        limpiarPoligono();
+        capa = L.geoJSON(geojson, { style: { color: '#2563eb', weight: 2, fillOpacity: 0.12 } }).addTo(map);
+        if (etiqueta) capa.bindTooltip(etiqueta, { sticky: true });
+        map.invalidateSize();  // si el contenedor cambió de tamaño, fitBounds calcula zoom 0
+        map.fitBounds(capa.getBounds(), { maxZoom: 16 });
+    }
+    function marcar(lat, lon) {
+        if (marcador) map.removeLayer(marcador);
+        marcador = L.marker([lat, lon]).addTo(map);
+    }
+    async function verZona(id) {
+        const r = await fetch(`/zonas/${encodeURIComponent(id)}`);
+        if (r.ok) { const z = await r.json(); dibujar(z.poligono.geojson, z.nombre); }
+    }
+
+    // --- ubicar coordenada -----------------------------------------------------
+    function filasDatos(d) {
+        const distrito = [d.macrodistrito, d.distrito_municipal].filter(Boolean).join(' · ');
+        return [
+            ['Zona', d.zona_o_sector], ['Distrito', distrito], ['UV', d.unidad_vecinal],
+            ['Localidad', d.barrio_real ? d.localidad : null], ['Calle', d.calle_avenida],
+            ['Municipio', d.municipio_ciudad], ['Departamento', [d.provincia, d.departamento].filter(Boolean).join(' · ')],
+        ].filter(([, v]) => v);
+    }
+
+    async function ubicar(lat, lon) {
+        mostrar('ubicar');
+        $('lat').value = lat; $('lon').value = lon;
+        marcar(lat, lon); limpiarPoligono();
+        $('estado-ubicar').innerHTML = '<p class="cargando">Consultando…</p>';
+        try {
+            const r = await fetch(`/ubicar?lat=${lat}&lon=${lon}`);
+            const d = await r.json();
+            $('estado-ubicar').replaceChildren();
+            if (!r.ok) throw new Error();
+            if (d.status === 'fuera_de_bolivia') {
+                $('res-ubicar').hidden = true;
+                $('estado-ubicar').innerHTML = '<p class="estado error">Esta coordenada está fuera de Bolivia.</p>';
+                return;
+            }
+            $('res-ubicar').hidden = false;
+            // Sin barrio (zona rural o pueblo sin barrios mapeados), lo más útil es la localidad.
+            texto($('u-titulo'), d.barrio_real || d.localidad || d.municipio_ciudad);
+            let sub = d.barrio_real ? PRECISION_BARRIO[d.precision_barrio] : 'Localidad · no hay barrio registrado aquí';
+            if (d.distancia_barrio_m != null) sub += ` (a ${d.distancia_barrio_m} m)`;
+            texto($('u-subtitulo'), sub);
+
+            const dl = $('u-datos'); dl.replaceChildren();
+            for (const [k, v] of filasDatos(d)) {
+                const fila = document.createElement('div');
+                const dt = document.createElement('dt'); dt.textContent = k;
+                const dd = document.createElement('dd'); dd.textContent = v;
+                fila.append(dt, dd); dl.appendChild(fila);
+            }
+
+            const esp = d.zona_mas_especifica;
+            $('u-poligono').hidden = !esp;
+            if (esp) { $('u-poligono').textContent = `Ver polígono: ${esp.nombre}`; $('u-poligono').onclick = () => verZona(esp.id); }
+
+            $('u-subdiv').replaceChildren(...(d.sub_divisiones_encontradas || []).map(n => chip(n)));
+            if (!$('u-subdiv').children.length) texto($('u-subdiv'), '—');
+            $('u-zonas').replaceChildren(...(d.jerarquia || []).map(z => chip(`${z.nombre} · ${z.nivel}`, () => verZona(z.id))));
+            texto($('u-direccion'), d.direccion_completa || '—');
+            texto($('u-fuente'), d.fuente_informacion);
+
+            const b = document.createElement('b'); b.textContent = d.barrio_real || d.localidad || 'Sin barrio';
+            const popup = document.createElement('div'); popup.append(b, document.createElement('br'), d.municipio_ciudad || '');
+            marcador.bindPopup(popup).openPopup();
+        } catch {
+            $('estado-ubicar').innerHTML = '<p class="estado error">No se pudo consultar la API.</p>';
+        }
+    }
+
+    // --- buscar zona ---------------------------------------------------------
+    async function buscar(q) {
+        $('res-buscar').hidden = true;
+        $('estado-buscar').innerHTML = '<p class="cargando">Buscando…</p>';
+        const r = await fetch(`/zonas/buscar?nombre=${encodeURIComponent(q)}`);
+        const d = await r.json();
+        $('estado-buscar').replaceChildren();
+        if (!r.ok) { $('estado-buscar').innerHTML = '<p class="estado error">Escribe al menos 2 letras.</p>'; return; }
+
+        const [clase, etiqueta] = ESTADOS[d.estado];
+        $('b-estado').className = 'estado ' + clase;
+        texto($('b-estado'), etiqueta + (d.ambiguo ? ' · el nombre existe en otras ciudades' : ''));
+        const z = d.zona;
+        texto($('b-titulo'), z ? z.nombre : `“${q}”`);
+        texto($('b-subtitulo'), z ? [z.nivel, z.municipio, z.departamento].filter(Boolean).join(' · ')
+                                  : 'Quedó registrado para conseguir su polígono.');
+        $('b-id-bloque').hidden = !(z && z.id_poligono);
+        if (z && z.id_poligono) texto($('b-id'), z.id_poligono);
+        texto($('b-fuente'), z ? z.fuente : '—');
+
+        const otras = d.estado === 'no_encontrado' ? d.sugerencias : d.alternativas;
+        $('b-otras-bloque').hidden = !(otras && otras.length);
+        texto($('b-otras-titulo'), d.estado === 'no_encontrado' ? '¿Quisiste decir?' : 'Otras coincidencias');
+        $('b-otras').replaceChildren(...(otras || []).map(a =>
+            chip(`${a.nombre} · ${a.municipio || a.departamento || a.nivel}`, a.id_poligono ? () => verZona(a.id_poligono) : null)));
+        // Sin resultado, las sugerencias son lo importante: se muestran abiertas.
+        $('b-detalles').open = d.estado === 'no_encontrado' || d.ambiguo;
+        $('res-buscar').hidden = false;
+
+        if (z && z.poligono) dibujar(z.poligono.geojson, z.nombre);
+        else if (z && z.punto) { limpiarPoligono(); marcar(z.punto.lat, z.punto.lon); map.setView([z.punto.lat, z.punto.lon], 16); }
+    }
+
+    // --- eventos -------------------------------------------------------------
+    map.on('click', e => ubicar(+e.latlng.lat.toFixed(6), +e.latlng.lng.toFixed(6)));
+    $('form-coord').onsubmit = e => {
+        e.preventDefault();
+        const lat = parseFloat($('lat').value), lon = parseFloat($('lon').value);
+        map.setView([lat, lon], 15); ubicar(lat, lon);
+    };
+    $('form-buscar').onsubmit = e => { e.preventDefault(); const q = $('q').value.trim(); if (q.length >= 2) buscar(q); };
+    ubicar(-17.765853, -63.194236);
+</script>
+</body>
+</html>
