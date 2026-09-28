@@ -223,7 +223,7 @@ Cada evento es una línea JSON con `fecha, tipo, consulta` y detalles. Tipos: `n
 |---|---|
 | Local | `registro/zonas_no_encontradas.jsonl` (ruta configurable con `REGISTRO_ZONAS`) |
 | Vercel | Logs de la función: buscar `ZONA_NO_ENCONTRADA` (el disco es de solo lectura) |
-| Cualquiera | POST al webhook `WEBHOOK_ZONAS_NO_ENCONTRADAS` si está definido (p. ej. un flujo n8n que lo guarde en una tabla) |
+| Cualquiera | POST al webhook `WEBHOOK_ZONAS_NO_ENCONTRADAS` si está definido (cualquier servicio que reciba un POST JSON) |
 
 ## Ampliar la cobertura
 

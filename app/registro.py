@@ -3,7 +3,7 @@
 Cada evento se escribe como una línea JSON en tres destinos, los que estén disponibles:
   - el log del proceso (siempre; en Vercel queda en los logs de la función),
   - un archivo .jsonl local (solo si el disco es escribible, es decir, en local),
-  - un webhook (p. ej. n8n) si está definida WEBHOOK_ZONAS_NO_ENCONTRADAS.
+  - un webhook (cualquier URL que reciba un POST JSON) si está definida WEBHOOK_ZONAS_NO_ENCONTRADAS.
 """
 import json
 import logging

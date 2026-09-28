@@ -144,6 +144,9 @@ TILDES = {
     "Ascencion de Guarayos": "Ascensión de Guarayos", "San Jose de Chiquitos": "San José de Chiquitos",
     "Fernandez Alonso": "Fernández Alonso", "Gutierrez": "Gutiérrez", "Colpa Belgica": "Colpa Bélgica",
     "Lago Poopo": "Lago Poopó",
+    # Provincias que en el origen traen "?" en lugar de ñ o tilde.
+    "?uflo De Chavez": "Ñuflo de Chávez", "Abun?": "Abuná", "Alonso de Iba?ez": "Alonso de Ibáñez",
+    "Andres Iba?ez": "Andrés Ibáñez", "Mu?ecas": "Muñecas", "Zuda?ez": "Zudáñez",
 }
 
 
