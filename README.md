@@ -237,6 +237,31 @@ Cada evento es una línea JSON con `fecha, tipo, consulta` y detalles. Tipos: `n
   `app/motor.py`. Candidatas: `mauforonda/atlasurbano` (manzanos del Censo 2024 de todo el
   país) y `mauforonda/geodatos` (respaldo de GeoBolivia).
 
+## Despliegue en Vercel
+
+La configuración está en `vercel.json` y no requiere nada en el panel de Vercel:
+
+1. En Vercel: **Add New → Project** → importar el repositorio de GitHub.
+2. **Framework Preset:** dejarlo como venga. Como `vercel.json` usa `builds`, Vercel ignora el
+   preset y los comandos del panel (lo avisa con un mensaje en el log de construcción, y es
+   lo esperado).
+3. **Root Directory:** la carpeta donde está `vercel.json`, es decir, la raíz del repositorio.
+4. Variables de entorno (opcionales): `WEBHOOK_ZONAS_NO_ENCONTRADAS` y `NOMINATIM_USER_AGENT`.
+5. Deploy. Para comprobarlo: `https://<proyecto>.vercel.app/estado` debe responder `{"estado": "ok", ...}`.
+
+Cada `git push` a `main` vuelve a desplegar. La función pesa unos 60 MB (datos + dependencias),
+arranca en ~2,5 s y usa ~160 MB de memoria.
+
+**No cambiar `builds`/`routes` por `functions`/`rewrites`.** Con `functions` + `rewrites`, Vercel
+detecta FastAPI por el `main.py` de la raíz y sirve la app desde ahí, pero el `rewrite` le pasa
+todas las peticiones con la ruta `/api/index.py`. FastAPI responde entonces 404
+(`{"detail":"Not Found"}`) a todo, incluso a `/docs`. Pasó en el primer despliegue de
+*barrios-bolivia*.
+
+**Carpeta `.vercel/`** (no se versiona): la vincula `vercel link` o el primer `vercel` de la CLI.
+Si se copió el proyecto desde otra carpeta, puede apuntar a otro proyecto o a otra cuenta;
+borrarla y volver a vincular antes de usar la CLI.
+
 ## Problemas conocidos y acciones pendientes
 
 ### Los ids de algunas zonas oficiales pueden cambiar al actualizar la fuente
