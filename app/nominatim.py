@@ -13,9 +13,9 @@ import time
 from geopy.exc import GeopyError
 from geopy.geocoders import Nominatim
 
-log = logging.getLogger("geoubicacion.nominatim")
+log = logging.getLogger("barrios_bolivia.nominatim")
 
-_geo = Nominatim(user_agent=os.environ.get("NOMINATIM_USER_AGENT", "geoubicacion-bolivia/4.0"), timeout=6)
+_geo = Nominatim(user_agent=os.environ.get("NOMINATIM_USER_AGENT", "barrios-bolivia/4.1"), timeout=6)
 _lock = threading.Lock()
 _ultima = 0.0
 

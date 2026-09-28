@@ -14,7 +14,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-log = logging.getLogger("geoubicacion.registro")
+log = logging.getLogger("barrios_bolivia.registro")
 
 RUTA = Path(os.environ.get("REGISTRO_ZONAS", Path(__file__).resolve().parent.parent / "registro" / "zonas_no_encontradas.jsonl"))
 WEBHOOK = os.environ.get("WEBHOOK_ZONAS_NO_ENCONTRADAS", "").strip()

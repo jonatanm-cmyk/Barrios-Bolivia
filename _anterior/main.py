@@ -18,7 +18,7 @@ except ImportError:
     HAS_GEOPANDAS = False
 
 app = FastAPI(
-    title="GeoUbicación Bolivia - Motor de Alta Precisión",
+    title="Barrios Bolivia - Motor de Alta Precisión",
     description="Motor inteligente multifuente para resolver con exactitud Zonas, Barrios y UVs en Bolivia.",
     version="3.0.0"
 )
@@ -319,7 +319,7 @@ def index():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>GeoUbicación Bolivia - Motor Inteligente</title>
+        <title>Barrios Bolivia - Motor Inteligente</title>
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <style>

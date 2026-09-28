@@ -42,7 +42,7 @@ OVERPASS = [
     "https://overpass-api.de/api/interpreter",
     "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
 ]
-USER_AGENT = "geoubicacion-bolivia/4.0 (construccion de datos)"
+USER_AGENT = "barrios-bolivia/4.1 (construccion de datos)"
 
 # Tolerancia de simplificación en grados (~0.0001° ≈ 11 m). Los municipios son
 # enormes y se simplifican más; las capas urbanas conservan casi todo el detalle.

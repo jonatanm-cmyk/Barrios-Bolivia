@@ -1,4 +1,4 @@
-"""API GeoUbicación Bolivia.
+"""API Barrios Bolivia.
 
 - Coordenada → departamento, municipio, distrito, UV, zona y barrio que la contienen.
 - Nombre de zona → polígono, y qué coordenadas caen dentro de ese polígono.
@@ -58,7 +58,7 @@ SECCIONES = [
 ]
 
 app = FastAPI(
-    title="GeoUbicación Bolivia",
+    title="Barrios Bolivia",
     summary="Coordenada → zona, y zona → polígono, para toda Bolivia.",
     description=DESCRIPCION,
     version="4.1.0",

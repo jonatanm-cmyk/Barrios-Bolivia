@@ -1,4 +1,4 @@
-# GeoUbicación Bolivia
+# Barrios Bolivia
 
 API (FastAPI) independiente para toda Bolivia que:
 
