@@ -11,7 +11,7 @@ from pathlib import Path
 from rapidfuzz import fuzz, process
 from shapely import STRtree
 from shapely.geometry import Point, mapping, shape
-from shapely.ops import unary_union
+from shapely.ops import nearest_points, unary_union
 
 from .texto import CIUDADES_COLOQUIALES, clave, contiene_frase, normalizar, quitar_frase
 
@@ -30,6 +30,7 @@ PRIORIDAD_BUSQUEDA = {"departamento": 0, "municipio": 1, "macrodistrito": 2, "zo
 
 UMBRAL_BUSQUEDA = 86       # puntaje mínimo (0-100) para dar un nombre por encontrado
 RADIO_BARRIO_PUNTO_M = 600  # distancia máxima a un barrio que solo existe como punto
+RADIO_SECTOR_CERCANO_M = 2000  # aproximación explícita cuando no hay barrio cercano
 # Calle o plaza entre dos polígonos: se acepta el polígono más cercano hasta ~45 m.
 TOLERANCIA_M = 45
 TOLERANCIA_GRADOS = TOLERANCIA_M / 111_000
@@ -291,6 +292,39 @@ class Motor:
         if mejor is None:
             return None
         return {**mejor, "distancia_m": round(mejor_d)}
+
+    def sector_cercano(self, lat: float, lon: float, municipio: str | None,
+                       departamento: str | None) -> dict | None:
+        """Sector más cercano del mismo municipio, hasta 2 km; no implica pertenencia."""
+        if not municipio or not departamento:
+            return None
+        punto = Point(lon, lat)
+        # El ancho en longitud aumenta con la latitud; el filtro final usa metros.
+        radio = RADIO_SECTOR_CERCANO_M / (111_000 * max(math.cos(math.radians(lat)), 0.01))
+        mejor, mejor_d = None, float("inf")
+        for i in self.arbol.query(punto.buffer(radio)):
+            z = self.zonas[i]
+            p = z.props
+            if (z.nivel not in ("barrio", "zona", "condominio") or
+                    p.get("municipio") != municipio or p.get("departamento") != departamento):
+                continue
+            cercano = nearest_points(punto, z.geom)[1]
+            d = distancia_m(lat, lon, cercano.y, cercano.x)
+            if d <= RADIO_SECTOR_CERCANO_M and d < mejor_d:
+                mejor, mejor_d = p, d
+        if self.arbol_puntos:
+            for i in self.arbol_puntos.query(punto.buffer(radio)):
+                f = self.puntos[i]
+                p = f["properties"]
+                if (p.get("nivel") not in ("barrio", "zona") or
+                        p.get("municipio") != municipio or p.get("departamento") != departamento or
+                        normalizar(p["nombre"]).startswith("distrito")):
+                    continue
+                plon, plat = f["geometry"]["coordinates"]
+                d = distancia_m(lat, lon, plat, plon)
+                if d <= RADIO_SECTOR_CERCANO_M and d < mejor_d:
+                    mejor, mejor_d = p, d
+        return {**mejor, "distancia_m": round(mejor_d)} if mejor else None
 
     def localidad_punto_cercana(self, lat: float, lon: float, municipio: str | None) -> dict | None:
         """Pueblo (town/village) registrado como punto más cercano, dentro de su radio típico."""

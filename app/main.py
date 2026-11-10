@@ -120,7 +120,9 @@ class UbicacionResponse(BaseModel):
     precision_barrio: Literal["poligono", "punto_cercano", "nominatim", "sin_datos"] = Field(
         "sin_datos", description="De dónde sale el barrio: `poligono` (el más confiable), `nominatim`, `punto_cercano` o `sin_datos`")
     distancia_barrio_m: Optional[int] = Field(None, description=(
-        "Metros al barrio cuando no contiene el punto: barrio-punto cercano, o polígono vecino a menos de 45 m"))
+        "Metros al punto o borde del sector cercano; no implica pertenencia"))
+    nivel_resolucion: Optional[Literal["barrio", "localidad", "municipio"]] = Field(
+        None, description="Nivel más específico resuelto; vacío fuera de Bolivia o sin municipio")
     zona_o_sector: Optional[str] = Field(None, description="Zona o sector, más amplio que el barrio")
     macrodistrito: Optional[str] = Field(None, description="Macrodistrito (La Paz) o comuna (Cochabamba)")
     distrito_municipal: Optional[str] = None
@@ -224,12 +226,20 @@ def resolver_ubicacion(lat: float, lon: float, calle: bool, incluir_poligono: bo
             distancia_barrio = round(z.geom.distance(punto) * 111_000)
     elif barrio_nom:
         barrio, precision = motor.nombre_popular({"municipio": nombre_mun, "nombre": barrio_nom}) or barrio_nom, "nominatim"
-    elif cercano := motor.barrio_punto_cercano(lat, lon, nombre_mun, uv.id if uv else None):
+    elif sector := (por_nivel.get("zona") or por_nivel.get("condominio")):
+        barrio, precision = motor.nombre_popular(sector.props) or sector.props["nombre"], "poligono"
+        if not sector.geom.covers(punto := Point(lon, lat)):
+            distancia_barrio = round(sector.geom.distance(punto) * 111_000)
+    elif direccion_osm.get("suburb"):
+        barrio, precision = direccion_osm["suburb"], "nominatim"
+    elif cercano := motor.sector_cercano(lat, lon, nombre_mun, dep.props["nombre"] if dep else None):
         barrio, precision = motor.nombre_popular(cercano) or cercano["nombre"], "punto_cercano"
         distancia_barrio = cercano["distancia_m"]
         fuentes.add(cercano["fuente"])
-    elif direccion_osm.get("suburb"):
-        barrio, precision = direccion_osm["suburb"], "nominatim"
+    elif uv and (cercano := motor.barrio_punto_cercano(lat, lon, nombre_mun, uv.id)):
+        barrio, precision = motor.nombre_popular(cercano) or cercano["nombre"], "punto_cercano"
+        distancia_barrio = cercano["distancia_m"]
+        fuentes.add(cercano["fuente"])
     localidad, precision_loc = _nombre(por_nivel.get("localidad")), "poligono"
     if not localidad:
         # Nominatim sabe a qué pueblo pertenece el punto aunque OSM no tenga su polígono
@@ -260,6 +270,7 @@ def resolver_ubicacion(lat: float, lon: float, calle: bool, incluir_poligono: bo
     return UbicacionResponse(
         status="success", latitud=lat, longitud=lon,
         barrio_real=barrio, precision_barrio=precision, distancia_barrio_m=distancia_barrio,
+        nivel_resolucion="barrio" if barrio else "localidad" if localidad else "municipio" if mun or especial else None,
         zona_o_sector=zona.props["nombre"] if zona else direccion_osm.get("suburb"),
         distrito_municipal=distrito.props["nombre"] if distrito else direccion_osm.get("city_district"),
         macrodistrito=_nombre(por_nivel.get("macrodistrito")),
